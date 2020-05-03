@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+#
+# Implementation of the tracker's report script in Python3.
+# Why? *TF2 Sniper voice*: It's good exercise, mate.
+#
+# Licensed under the terms and conditions of the GNU GPL v3.
+# For more information, see https://gnu.org/licenses
+#
+
+import os
+import sys
+import sqlite3 as sql
+
+database = "db.sqlite3"
+
+# Get us a cursor object
+conn = sql.connect(database)
+cursor = conn.cursor()
+
+# These fixed expenses will be used to find our daily "mileage"
+cursor.execute("SELECT amount FROM tracker_budget WHERE name = 'Bills'")
+bills = int(cursor.fetchone()[0])
+
+cursor.execute("SELECT SUM(amount) FROM tracker_budget")
+total_budget = int(cursor.fetchone()[0])
+
+cursor.execute("SELECT SUM(cost) FROM tracker_expense WHERE active = 1")
+total_expenses = int(cursor.fetchone()[0])
+
+print("Total budget allocated is: %s JPY" % total_budget)
+print("Remaining budget is: %s JPY" % (total_budget - total_expenses))
+print("========================")
+
+cursor.execute("""
+    SELECT day, SUM(cost) AS day_total FROM tracker_expense
+    GROUP BY day
+    ORDER BY day DESC
+    LIMIT 3;
+""")
+
+last_three = cursor.fetchall()
+
+print("The last three days' total expenses were:\n")
+
+for row in last_three:
+    print("%s: %s JPY\n" % (row[0], row[1]))
+
+print("========================")
+
+print('Your "mileage" per day is: %d JPY' % ((total_budget - bills) / 30))
+
+conn.close()
+
+sys.exit(0)

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Summary of expenses as of {{ curr_date }}</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    </head>
+    <body>
+        <h1>Summary of budget - {{ curr_date }}</h1>
+        <p>
+            This page is a test!
+        </p>
+        <p>
+            Use this page to insert all kinds of budgets analysis you'd like to
+            include, like:
+        </p>
+        <ul>
+            <li>
+                Analytics.
+            </li>
+            <li>
+                Daily stats.
+            </li>
+            <li>
+                Calculated max average daily spending.
+            </li>
+            <li>
+                Etc.
+            </li>
+        </ul>
+        {% block test %}
+        {% endblock %}
+    </body>
+</html>
