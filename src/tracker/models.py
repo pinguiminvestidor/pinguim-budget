@@ -102,3 +102,73 @@ class Budget(models.Model):
 
     def __unicode__(self):
         return self.name
+
+class NetWorth(models.Model):
+    '''
+    A "line in my complete net worth calculation spreadsheet, including:
+     - Cash Positions
+     - Assets
+     - Calculations of percentage of goal achieved
+     - Estimation of total passive income
+
+    Some of the columns will be read-only, calculated on the fly.
+    '''
+
+    # Date of Portfolio statement
+    day = models.DateField(default=timezone.now)
+
+    # Cash Positions
+    cash_brazil = models.FloatField(default=0)
+    savings_brazil = models.FloatField(default=0)
+    cash_japan = models.FloatField(default=0)
+    usd_reserve = models.FloatField(default=0)
+
+    # Assets
+    other_fixed_income = models.FloatField(default=0)
+    tesouro_direto = models.FloatField(default=0)
+    FII = models.FloatField(default=0)
+    acoes = models.FloatField(default=0)
+    stocks = models.FloatField(default=0)
+
+    # Calculated values:
+    def total(self, forShow=True):
+        subtotal = (
+                self.cash_brazil +
+                self.savings_brazil +
+                self.cash_japan +
+                self.usd_reserve +
+                self.other_fixed_income +
+                self.tesouro_direto +
+                self.FII +
+                self.acoes +
+                self.stocks
+               )
+        if forShow:
+            return '{:,}'.format(subtotal)
+        else:
+            return subtotal
+
+    def total_cash(self):
+        subtotal = self.cash_brazil + self.savings_brazil + self.cash_japan + self.usd_reserve
+        return '{:,}'.format(subtotal)
+
+    def total_fixed_income(self):
+        subtotal = self.other_fixed_income + self.tesouro_direto
+        return '{:,}'.format(subtotal)
+
+    def total_equity(self):
+        subtotal = self.FII + self.acoes + self.stocks
+        return '{:,}'.format(subtotal)
+
+    def percent_of_goal(self):
+        perc = self.total(forShow=False) / 2700000.0
+        return '{0:.2%}'.format(perc)
+
+    # TODO: how can we calculate the delta between the previous date?
+
+    def passive_income_projection(self):
+        return self.total() / 100.0
+
+    # name of this object:
+    def __unicode__(self):
+        return unicode('Snapshot ' + str(self.id))
