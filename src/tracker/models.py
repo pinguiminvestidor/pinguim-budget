@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
+# Model definitions migrated from legacy Python2
 from django.db import models
 
 from django.utils import timezone
@@ -36,7 +34,7 @@ class Expense(models.Model):
     active = models.BooleanField(default=True, editable=False)
 
 
-    def __unicode__(self):
+    def __str__(self):
         return self.description
 
 class Budget(models.Model):
@@ -100,7 +98,7 @@ class Budget(models.Model):
         else:
             return "Budget blown"
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 class NetWorth(models.Model):
@@ -170,5 +168,5 @@ class NetWorth(models.Model):
         return self.total() / 100.0
 
     # name of this object:
-    def __unicode__(self):
-        return unicode('Snapshot ' + str(self.id))
+    def __str__(self):
+        return str('Snapshot ' + str(self.day))
