@@ -3,14 +3,18 @@
 # Implementation of the tracker's report script in Python3.
 # Why? *TF2 Sniper voice*: It's good exercise, mate.
 #
+# Pass '-d' or '--details' to see detailed, per day output.
+#
 # Licensed under the terms and conditions of the GNU GPL v3.
 # For more information, see https://gnu.org/licenses
 #
 
 import os
 import sys
+import datetime
 import sqlite3 as sql
 
+# This is the standard Django name. Did you change it?
 database = "db.sqlite3"
 
 # Get us a cursor object
@@ -24,30 +28,74 @@ bills = int(cursor.fetchone()[0])
 cursor.execute("SELECT SUM(amount) FROM tracker_budget")
 total_budget = int(cursor.fetchone()[0])
 
+day_budget = (total_budget - bills) / 30
+
 cursor.execute("SELECT SUM(cost) FROM tracker_expense WHERE active = 1")
-total_expenses = int(cursor.fetchone()[0])
+try:
+    total_expenses = int(cursor.fetchone()[0])
+except TypeError:
+    total_expenses = 0
 
 print("Total budget allocated is: %s JPY" % total_budget)
 print("Remaining budget is: %s JPY" % (total_budget - total_expenses))
 print("========================")
 
-cursor.execute("""
-    SELECT day, SUM(cost) AS day_total FROM tracker_expense
-    GROUP BY day
-    ORDER BY day DESC
-    LIMIT 3;
-""")
+if len(sys.argv) > 1:
+    if sys.argv[1] == '-d' or sys.argv[1] == '--details':
+        # Find out what month it is, then get all expenses logged into it.
+        today = datetime.datetime.today()
 
-last_three = cursor.fetchall()
+        year = str(today.year)
 
-print("The last three days' total expenses were:\n")
+        if today.month < 10:
+            # Need to pad a zero on the left side to match SQLite date format:
+            month = "0" + str(today.month)
+        else:
+            month = str(today.month)
 
-for row in last_three:
-    print("%s: %s JPY\n" % (row[0], row[1]))
+        # SQLite uses dates like this YYYY-MM-DD. Thankfully, we don't have to
+        # deal with days on this purpose
+        query = str(year + "-" + month)
+
+        print("Listing all expenses for %s:" % (query))
+        cursor.execute("""
+            SELECT day, SUM(cost) AS day_total 
+            FROM tracker_expense 
+            WHERE day LIKE ? GROUP BY day""", ['%'+query+'%'])
+
+        results = cursor.fetchall()
+
+        # Let's find which days went "over budget" and which ones didn't:
+        for row in results:
+            if (day_budget - row[1]) > 0:
+                print("%s: %s yen spent" % (row[0], row[1]))
+            else:
+                print("%s: %s yen spent --> %s yen over budget" % (row[0], row[1], (row[1] - day_budget)))
+            print("")
+
+    else:
+        print("Unknown option '%s'. Only acceptable option is '-d'" % sys.argv[1])
+
+
+else:
+
+    cursor.execute("""
+        SELECT day, SUM(cost) AS day_total FROM tracker_expense
+        GROUP BY day
+        ORDER BY day DESC
+        LIMIT 3;
+    """)
+
+    last_three = cursor.fetchall()
+
+    print("The last three days' total expenses were:\n")
+
+    for row in last_three:
+        print("%s: %s JPY\n" % (row[0], row[1]))
 
 print("========================")
 
-print('Your "mileage" per day is: %d JPY' % ((total_budget - bills) / 30))
+print('Your "mileage" per day is: %d JPY' % (day_budget))
 
 conn.close()
 

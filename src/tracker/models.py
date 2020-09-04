@@ -128,6 +128,9 @@ class NetWorth(models.Model):
     acoes = models.FloatField(default=0)
     stocks = models.FloatField(default=0)
 
+    # Migrated from later version. This should be from 0 to 1 (percentage)
+    aporte = models.FloatField(default=0)
+
     # Calculated values:
     def total(self, forShow=True):
         subtotal = (
